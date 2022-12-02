@@ -189,15 +189,8 @@ namespace Bonsai.Harp
             return Observable.Create<HarpMessage>(observer =>
             {
                 var transport = CreateTransport(observer);
-                var cleanup = Disposable.Create(() =>
-                {
-                    var writeOpCtrl = HarpCommand.OperationControl(DeviceState.Standby, LedState, VisualIndicators, Heartbeat, CommandReplies, false);
-                    transport.Write(writeOpCtrl);
-                });
-
-                return new CompositeDisposable(
-                    cleanup,
-                    transport);
+                var cleanup = CloseTransport(transport, observer);
+                return new CompositeDisposable(cleanup);
             });
         }
 
@@ -274,6 +267,33 @@ namespace Bonsai.Harp
             var writeOpCtrl = HarpCommand.OperationControl(DeviceState, LedState, VisualIndicators, Heartbeat, CommandReplies, DumpRegisters);
             transport.Write(writeOpCtrl);
             return transport;
+        }
+
+        IDisposable CloseTransport(SerialTransport transport, IObserver<HarpMessage> observer)
+        {
+            transport.SetObserver(Observer.Create<HarpMessage>(
+                message =>
+                {
+                    if (message.Address != DeviceRegisters.OperationControl)
+                    {
+                        observer.OnNext(message);
+                        return;
+                    }
+
+                    var opCtrl = message.GetPayloadByte();
+                    if ((opCtrl & 0x01) == 0)
+                    {
+                        transport.Close();
+                    }
+                },
+                observer.OnError,
+                observer.OnCompleted));
+
+            return Disposable.Create(() =>
+            {
+                var writeOpCtrl = HarpCommand.OperationControl(DeviceState.Standby, LedState, VisualIndicators, Heartbeat, CommandReplies, false);
+                transport.Write(writeOpCtrl);
+            });
         }
     }
 }

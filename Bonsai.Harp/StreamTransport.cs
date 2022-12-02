@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Threading;
 
 namespace Bonsai.Harp
 {
@@ -25,7 +26,7 @@ namespace Bonsai.Harp
 
         internal void SetObserver(IObserver<HarpMessage> observer)
         {
-            this.observer = observer ?? throw new ArgumentNullException(nameof(observer));
+            Interlocked.Exchange(ref this.observer, observer ?? throw new ArgumentNullException(nameof(observer)));
         }
 
         static bool CheckType(byte type)
