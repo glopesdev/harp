@@ -4,6 +4,7 @@ using System.IO;
 using System.Reactive;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
+using System.Xml.Serialization;
 using Bonsai.IO;
 using SystemPath = System.IO.Path;
 
@@ -13,6 +14,7 @@ namespace Bonsai.Harp
     /// Represents an operator that writes each Harp message in the sequence
     /// to a raw binary file.
     /// </summary>
+    [XmlType(Namespace = Constants.XmlNamespace)]
     [Description("Writes each Harp message in the sequence to a raw binary file.")]
     public class MessageWriter : FileSink<HarpMessage, BinaryWriter>
     {
